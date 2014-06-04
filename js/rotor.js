@@ -31,17 +31,23 @@
 	callback: A function to be called every time a rotation occurs.
 
 	maxDegree: An upper bound on the rotation of your rotor. Including a maxDegree will keep the degree of
-				rotation between 0 and your maxDegree. If no maximum is desired, pass in maxDegree=360
-				CURRENTLY THIS DOES NOTHING
+				rotation between 0 and your maxDegree. If no maximum is desired, pass in maxDegree=-1.
+
+	initialRotation: A degree to tilt the whole rotator by, an integer between -360 and 360. Pass 0
+					for no initial rotation.
 */
-var Rotor = function(rotorId, options, callback, maxDegree){
+var Rotor = function(rotorId, options, callback, maxDegree, initialRotation){
 
 	this.rotorId = rotorId;
 	this.options = options;
 	this.maxDegree = maxDegree;
 	this.numOptions = options.length;
 	this.selected = 0;
+	this.initialRotation = initialRotation;
 	this.skipRatio = 360/this.numOptions;
+	if(this.maxDegree != -1){
+		this.skipRatio = this.maxDegree/this.numOptions;
+	}
 	this.selectDegree = 0;
 	this.selecting = false;
 	this.radius = $(this.rotorId).innerWidth()/2;
@@ -53,7 +59,6 @@ var Rotor = function(rotorId, options, callback, maxDegree){
 	this.oldAngle, this.newAngle = 0;
 	
 	this.init();
-
 	this.callback = callback;
 
 	
@@ -75,10 +80,20 @@ Rotor.prototype.rotate = function(newX, newY){
 
 	
 
+	if(newX <= this.radius + this.offset[0]){
+		this.newAngle = 360 - this.newAngle;
+		if(this.newAngle > 350){
+			this.oldAngle = this.newAngle;
+		}
+		
+	} else if(this.newAngle < 10){
+		this.oldAngle = this.newAngle;
+	}
+
 	console.log(this.newAngle);
 
-	if(newX <= this.radius + this.offset[0]){
-		this.newAngle = -1 * this.newAngle;
+	if(this.newAngle < 0){
+		return;
 	}
 
 	var changeAngle = this.newAngle - this.oldAngle;
@@ -90,7 +105,7 @@ Rotor.prototype.rotate = function(newX, newY){
 
 
 	this.selectDegree = this.selectDegree + changeAngle;
-
+	console.log(changeAngle);
 	if(this.maxDegree != -1){
 		if(this.selectDegree > this.maxDegree){
 			this.selectDegree = this.maxDegree;
@@ -111,7 +126,8 @@ Rotor.prototype.rotate = function(newX, newY){
 		this.selected = this.numOptions + this.selected;
 	}
 
-	$(this.rotorId).css({WebkitTransform: 'rotate(' + this.selectDegree+ 'deg)', MozTransform: 'rotate(' + this.selectDegree+ 'deg)'});	
+	rotation = this.selectDegree + this.initialRotation;
+	$(this.rotorId).css({WebkitTransform: 'rotate(' + rotation + 'deg)', MozTransform: 'rotate(' + rotation + 'deg)'});	
 
 	this.oldAngle = this.newAngle;
 
@@ -171,7 +187,7 @@ Rotor.prototype.handleMouseDown = function(event){
 	this.oldAngle = Math.acos(cosine)*x; 
 
 	if(newX <= this.radius + this.offset[0]){
-		this.oldAngle = -1 * this.oldAngle;
+		this.oldAngle = 360 - this.oldAngle;
 	}
 }
 
@@ -293,5 +309,7 @@ Rotor.prototype.init = function(){
 	$(window).resize(function(){
 		ctx.findCenter();
 	});
+
+	$(this.rotorId).css({WebkitTransform: 'rotate(' + this.initialRotation+ 'deg)', MozTransform: 'rotate(' + this.initialRotation+ 'deg)'});	
 
 }

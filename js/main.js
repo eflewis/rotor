@@ -40,5 +40,5 @@ document.onload = function(){
 
 		$("#message").html(data.currentItem);
 
-	}, 90);
+	}, -1, 0);
 }();
